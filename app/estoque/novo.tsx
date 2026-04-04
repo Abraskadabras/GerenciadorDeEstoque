@@ -1,18 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { adicionarItemEstoque } from '../../src/storage/database';
-import { ItemEstoque } from '../../src/types';
+import { adicionarItemEstoque, getFornecedores } from '../../src/storage/database';
+import { ItemEstoque, Fornecedor } from '../../src/types';
 
 export default function NovoEstoque() {
   const router = useRouter();
   const [nome, setNome] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [unidade, setUnidade] = useState('unid');
-  const [quantidadeMinima, setQuantidadeMinima] = useState('');
+  const [quantidadeMinima, setQuantidadeMinima] = useState('5');
+  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
+  const [fornecedorId, setFornecedorId] = useState('');
+
+  useEffect(() => {
+    async function carregarFornecedores() {
+      const lista = await getFornecedores();
+      setFornecedores(lista);
+    }
+    carregarFornecedores();
+  }, []);
 
   async function salvar() {
     if (!nome.trim() || !quantidade.trim()) {
@@ -26,7 +36,7 @@ export default function NovoEstoque() {
       quantidade: Number(quantidade),
       unidade,
       quantidadeMinima: Number(quantidadeMinima),
-      fornecedorId: '',
+      fornecedorId,
       createdAt: new Date().toISOString(),
     };
 
@@ -41,7 +51,7 @@ export default function NovoEstoque() {
         style={styles.input}
         value={nome}
         onChangeText={setNome}
-        placeholder="ex: Camisa"
+        placeholder="ex: Farinha de trigo"
       />
 
       <Text style={styles.label}>Quantidade *</Text>
@@ -70,6 +80,54 @@ export default function NovoEstoque() {
         placeholder="ex: 5"
       />
 
+      <Text style={styles.label}>Fornecedor</Text>
+      {fornecedores.length === 0 ? (
+        <View style={styles.semFornecedor}>
+          <Text style={styles.semFornecedorTexto}>
+            Nenhum fornecedor cadastrado ainda.
+          </Text>
+          <TouchableOpacity onPress={() => router.push('/fornecedores/novo')}>
+            <Text style={styles.semFornecedorLink}>Cadastrar fornecedor →</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.fornecedorLista}>
+          {/* Opção "nenhum" */}
+          <TouchableOpacity
+            style={[
+              styles.fornecedorOpcao,
+              fornecedorId === '' && styles.fornecedorAtivo,
+            ]}
+            onPress={() => setFornecedorId('')}
+          >
+            <Text style={[
+              styles.fornecedorTexto,
+              fornecedorId === '' && styles.fornecedorTextoAtivo,
+            ]}>
+              Nenhum
+            </Text>
+          </TouchableOpacity>
+
+          {fornecedores.map((f) => (
+            <TouchableOpacity
+              key={f.id}
+              style={[
+                styles.fornecedorOpcao,
+                fornecedorId === f.id && styles.fornecedorAtivo,
+              ]}
+              onPress={() => setFornecedorId(f.id)}
+            >
+              <Text style={[
+                styles.fornecedorTexto,
+                fornecedorId === f.id && styles.fornecedorTextoAtivo,
+              ]}>
+                {f.nome}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       <TouchableOpacity style={styles.btn} onPress={salvar}>
         <Text style={styles.btnTexto}>Salvar item</Text>
       </TouchableOpacity>
@@ -88,6 +146,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e5e5',
   },
+  semFornecedor: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#e5e5e5',
+  },
+  semFornecedorTexto: { fontSize: 13, color: '#888' },
+  semFornecedorLink: {
+    fontSize: 13,
+    color: '#4F46E5',
+    fontWeight: '600',
+    marginTop: 6,
+  },
+  fornecedorLista: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  fornecedorOpcao: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e5e5e5',
+  },
+  fornecedorAtivo: { backgroundColor: '#4F46E5', borderColor: '#4F46E5' },
+  fornecedorTexto: { fontSize: 13, color: '#666' },
+  fornecedorTextoAtivo: { color: '#fff', fontWeight: '600' },
   btn: {
     backgroundColor: '#4F46E5',
     borderRadius: 10,

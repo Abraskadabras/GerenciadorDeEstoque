@@ -12,6 +12,7 @@ export default function NovoMaterial() {
   const [nome, setNome] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [unidade, setUnidade] = useState('unid');
+  const [valor, setValor] = useState('');
   const [tipo, setTipo] = useState<'materia-prima' | 'produto-uso'>('materia-prima');
 
   async function salvar() {
@@ -25,6 +26,7 @@ export default function NovoMaterial() {
       nome: nome.trim(),
       quantidade: Number(quantidade),
       unidade,
+      valor: Number(valor.replace(',', '.')),
       tipo,
       createdAt: new Date().toISOString(),
     };
@@ -35,7 +37,6 @@ export default function NovoMaterial() {
 
   return (
     <ScrollView style={styles.container}>
-
       <Text style={styles.label}>Tipo *</Text>
       <View style={styles.tipoContainer}>
         {(['materia-prima', 'produto-uso'] as const).map((op) => (
@@ -74,6 +75,15 @@ export default function NovoMaterial() {
         value={unidade}
         onChangeText={setUnidade}
         placeholder="ex: kg, unid, caixas"
+      />
+
+      <Text style={styles.label}>Valor unitário (R$)</Text>
+      <TextInput
+        style={styles.input}
+        value={valor}
+        onChangeText={setValor}
+        keyboardType="decimal-pad"
+        placeholder="ex: 12,50"
       />
 
       <TouchableOpacity style={styles.btn} onPress={salvar}>

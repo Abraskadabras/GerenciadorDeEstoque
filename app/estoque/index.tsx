@@ -1,24 +1,37 @@
-import { useEffect, useState } from 'react';
-import {
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';import {
   View, Text, FlatList, TouchableOpacity,
   StyleSheet, Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ItemEstoque } from '../../src/types';
-import { getEstoque, removerItemEstoque } from '../../src/storage/database';
+import { ItemEstoque, Fornecedor } from '../../src/types';
+import { getEstoque, removerItemEstoque, getFornecedores } from '../../src/storage/database';
 
 export default function Estoque() {
   const router = useRouter();
   const [itens, setItens] = useState<ItemEstoque[]>([]);
+  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
 
   async function carregar() {
-    const dados = await getEstoque();
+    const [dados, lista] = await Promise.all([
+      getEstoque(),
+      getFornecedores(),
+    ]);
     setItens(dados);
+    setFornecedores(lista);
   }
 
-  useEffect(() => {
-    carregar();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      carregar();
+    }, [])
+  );
+
+  function nomeFornecedor(id: string) {
+    if (!id) return null;
+    const f = fornecedores.find((f) => f.id === id);
+    return f ? f.nome : null;
+  }
 
   async function confirmarRemocao(id: string, nome: string) {
     Alert.alert(
@@ -50,10 +63,14 @@ export default function Estoque() {
           </View>
         }
         renderItem={({ item }) => (
-          <View style={[
-            styles.card,
-            item.quantidade <= item.quantidadeMinima && styles.cardAlerta
-          ]}>
+          <TouchableOpacity
+            style={[
+              styles.card,
+              item.quantidade <= item.quantidadeMinima && styles.cardAlerta
+            ]}
+            onPress={() => router.push(`/estoque/${item.id}`)}
+            activeOpacity={0.75}
+          >
             <View style={styles.cardInfo}>
               <Text style={styles.cardNome}>{item.nome}</Text>
               <Text style={styles.cardQtd}>
@@ -62,14 +79,22 @@ export default function Estoque() {
                   <Text style={styles.alertaTexto}> ⚠ estoque baixo</Text>
                 )}
               </Text>
+              {nomeFornecedor(item.fornecedorId) && (
+                <Text style={styles.cardFornecedor}>
+                  🏭 {nomeFornecedor(item.fornecedorId)}
+                </Text>
+              )}
             </View>
             <TouchableOpacity
-              onPress={() => confirmarRemocao(item.id, item.nome)}
+              onPress={(e) => {
+                e.stopPropagation();
+                confirmarRemocao(item.id, item.nome);
+              }}
               style={styles.btnRemover}
             >
               <Text style={styles.btnRemoverTexto}>✕</Text>
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         )}
       />
 
@@ -103,6 +128,7 @@ const styles = StyleSheet.create({
   cardNome: { fontSize: 15, fontWeight: '600', color: '#1a1a1a' },
   cardQtd: { fontSize: 13, color: '#666', marginTop: 3 },
   alertaTexto: { color: '#D97706', fontWeight: '600' },
+  cardFornecedor: { fontSize: 12, color: '#0F766E', marginTop: 4 },
   btnRemover: { padding: 8 },
   btnRemoverTexto: { color: '#ef4444', fontSize: 16, fontWeight: '600' },
   fab: {

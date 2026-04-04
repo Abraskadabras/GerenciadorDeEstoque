@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet
+  StyleSheet, Alert
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Material } from '../../src/types';
 import { getMateriais, removerMaterial } from '../../src/storage/database';
 
@@ -17,14 +17,41 @@ export default function Materiais() {
     setMateriais(dados);
   }
 
-  useEffect(() => {
-    carregar();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      carregar();
+    }, [])
+  );
 
-  const listafiltrada = materiais.filter((m) => {
+  const listaFiltrada = materiais.filter((m) => {
     if (filtro === 'todos') return true;
     return m.tipo === filtro;
   });
+
+  const totalGeral = materiais.reduce((acc, m) => acc + (m.valor * m.quantidade), 0);
+  const totalFiltrado = listaFiltrada.reduce((acc, m) => acc + (m.valor * m.quantidade), 0);
+
+  function formatarValor(v: number) {
+    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  async function confirmarRemocao(id: string, nome: string) {
+    Alert.alert(
+      'Remover material',
+      `Deseja remover "${nome}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Remover',
+          style: 'destructive',
+          onPress: async () => {
+            await removerMaterial(id);
+            carregar();
+          },
+        },
+      ]
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -44,8 +71,29 @@ export default function Materiais() {
         ))}
       </View>
 
+      {/* Card de total investido */}
+      <View style={styles.totalCard}>
+        <View style={styles.totalItem}>
+          <Text style={styles.totalLabel}>Total investido</Text>
+          <Text style={styles.totalValor}>{formatarValor(totalGeral)}</Text>
+        </View>
+        {filtro !== 'todos' && (
+          <>
+            <View style={styles.totalDivisor} />
+            <View style={styles.totalItem}>
+              <Text style={styles.totalLabel}>
+                {filtro === 'materia-prima' ? 'Matéria-prima' : 'Uso interno'}
+              </Text>
+              <Text style={[styles.totalValor, { fontSize: 15 }]}>
+                {formatarValor(totalFiltrado)}
+              </Text>
+            </View>
+          </>
+        )}
+      </View>
+
       <FlatList
-        data={listafiltrada}
+        data={listaFiltrada}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={
           <View style={styles.vazio}>
@@ -63,18 +111,24 @@ export default function Materiais() {
                 styles.badgeTexto,
                 { color: item.tipo === 'materia-prima' ? '#B45309' : '#6D28D9' }
               ]}>
-                {item.tipo === 'materia-prima' ? 'Matéria-prima' : 'Uso interno'}
+                {item.tipo === 'materia-prima' ? 'MP' : 'UI'}
               </Text>
             </View>
             <View style={styles.cardInfo}>
               <Text style={styles.cardNome}>{item.nome}</Text>
               <Text style={styles.cardQtd}>{item.quantidade} {item.unidade}</Text>
+              {item.valor > 0 && (
+                <Text style={styles.cardValor}>
+                  {formatarValor(item.valor)} / unid
+                  {'  ·  '}
+                  <Text style={styles.cardTotal}>
+                    Total: {formatarValor(item.valor * item.quantidade)}
+                  </Text>
+                </Text>
+              )}
             </View>
             <TouchableOpacity
-              onPress={async () => {
-                await removerMaterial(item.id);
-                carregar();
-              }}
+              onPress={() => confirmarRemocao(item.id, item.nome)}
               style={styles.btnRemover}
             >
               <Text style={styles.btnRemoverTexto}>✕</Text>
@@ -109,12 +163,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e5e5',
   },
-  filtroAtivo: {
-    backgroundColor: '#BE185D',
-    borderColor: '#BE185D',
-  },
+  filtroAtivo: { backgroundColor: '#BE185D', borderColor: '#BE185D' },
   filtroTexto: { fontSize: 12, color: '#666', fontWeight: '500' },
   filtroTextoAtivo: { color: '#fff' },
+  totalCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 10,
+    padding: 16,
+    flexDirection: 'row',
+    elevation: 1,
+  },
+  totalItem: { flex: 1 },
+  totalLabel: { fontSize: 12, color: '#888', marginBottom: 4 },
+  totalValor: { fontSize: 18, fontWeight: '700', color: '#BE185D' },
+  totalDivisor: {
+    width: 1,
+    backgroundColor: '#e5e5e5',
+    marginHorizontal: 16,
+  },
   vazio: { alignItems: 'center', marginTop: 80 },
   vazioTexto: { fontSize: 16, color: '#888' },
   vazioSub: { fontSize: 13, color: '#aaa', marginTop: 6 },
@@ -130,14 +198,18 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  badgeTexto: { fontSize: 11, fontWeight: '600' },
+  badgeTexto: { fontSize: 11, fontWeight: '700' },
   cardInfo: { flex: 1 },
   cardNome: { fontSize: 15, fontWeight: '600', color: '#1a1a1a' },
   cardQtd: { fontSize: 13, color: '#666', marginTop: 3 },
+  cardValor: { fontSize: 12, color: '#888', marginTop: 3 },
+  cardTotal: { color: '#BE185D', fontWeight: '600' },
   btnRemover: { padding: 8 },
   btnRemoverTexto: { color: '#ef4444', fontSize: 16, fontWeight: '600' },
   fab: {

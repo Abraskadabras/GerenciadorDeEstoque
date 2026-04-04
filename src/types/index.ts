@@ -22,5 +22,6 @@ export type Material = {
     quantidade: number;
     unidade: string;
     tipo: 'materia-prima' | 'produto-uso';
+    valor:number;
     createdAt: string;
 };

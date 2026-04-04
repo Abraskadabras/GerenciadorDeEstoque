@@ -40,6 +40,14 @@ export async function adicionarFornecedor(f: Fornecedor): Promise<void> {
   await AsyncStorage.setItem(CHAVES.fornecedores, JSON.stringify([...lista, f]));
 }
 
+export async function removerFornecedor(id: string): Promise<void> {
+  const lista = await getFornecedores();
+  await AsyncStorage.setItem(
+    '@stockmanager:fornecedores',
+    JSON.stringify(lista.filter((f) => f.id !== id))
+  );
+}
+
 // --- Materiais ---
 
 export async function getMateriais(): Promise<Material[]> {
@@ -58,4 +66,24 @@ export async function removerMaterial(id: string): Promise<void> {
     '@stockmanager:materiais',
     JSON.stringify(lista.filter((m) => m.id !== id))
   );
+}
+
+//---------------
+
+export async function atualizarItemEstoque(itemAtualizado: ItemEstoque): Promise<void> {
+  const itens = await getEstoque();
+  const novos = itens.map((i) => i.id === itemAtualizado.id ? itemAtualizado : i);
+  await salvarEstoque(novos);
+}
+
+export async function atualizarFornecedor(atualizado: Fornecedor): Promise<void> {
+  const lista = await getFornecedores();
+  const novos = lista.map((f) => f.id === atualizado.id ? atualizado : f);
+  await AsyncStorage.setItem('@stockmanager:fornecedores', JSON.stringify(novos));
+}
+
+export async function atualizarMaterial(atualizado: Material): Promise<void> {
+  const lista = await getMateriais();
+  const novos = lista.map((m) => m.id === atualizado.id ? atualizado : m);
+  await AsyncStorage.setItem('@stockmanager:materiais', JSON.stringify(novos));
 }

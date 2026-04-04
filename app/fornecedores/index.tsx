@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
   StyleSheet, Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { Fornecedor } from '../../src/types';
-import { getFornecedores } from '../../src/storage/database';
+import { getFornecedores, removerFornecedor } from '../../src/storage/database';
 
 export default function Fornecedores() {
   const router = useRouter();
@@ -16,9 +17,29 @@ export default function Fornecedores() {
     setFornecedores(dados);
   }
 
-  useEffect(() => {
-    carregar();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      carregar();
+    }, [])
+  );
+
+  async function confirmarRemocao(id: string, nome: string) {
+    Alert.alert(
+      'Remover fornecedor',
+      `Deseja remover "${nome}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Remover',
+          style: 'destructive',
+          onPress: async () => {
+            await removerFornecedor(id);
+            carregar();
+          },
+        },
+      ]
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -46,6 +67,20 @@ export default function Fornecedores() {
               {item.email ? (
                 <Text style={styles.cardDetalhe}>✉ {item.email}</Text>
               ) : null}
+            </View>
+            <View style={styles.acoes}>
+              <TouchableOpacity
+                style={styles.btnEditar}
+                onPress={() => router.push(`/fornecedores/${item.id}`)}
+              >
+                <Text style={styles.btnEditarTexto}>✏️</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnRemover}
+                onPress={() => confirmarRemocao(item.id, item.nome)}
+              >
+                <Text style={styles.btnRemoverTexto}>✕</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -89,6 +124,11 @@ const styles = StyleSheet.create({
   cardInfo: { flex: 1 },
   cardNome: { fontSize: 15, fontWeight: '600', color: '#1a1a1a' },
   cardDetalhe: { fontSize: 13, color: '#666', marginTop: 3 },
+  acoes: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  btnEditar: { padding: 8 },
+  btnEditarTexto: { fontSize: 16 },
+  btnRemover: { padding: 8 },
+  btnRemoverTexto: { color: '#ef4444', fontSize: 16, fontWeight: '600' },
   fab: {
     position: 'absolute',
     bottom: 24,
