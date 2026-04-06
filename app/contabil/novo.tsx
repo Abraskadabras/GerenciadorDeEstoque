@@ -21,7 +21,33 @@ export default function NovoLancamento() {
   const [categoria, setCategoria] = useState('');
   const [produtoId, setProdutoId] = useState('');
   const [produtos, setProdutos] = useState<ItemEstoque[]>([]);
-  const [data, setData] = useState(new Date().toISOString().split('T')[0]);
+ // const [data, setData] = useState(new Date().toISOString().split('T')[0]);
+
+ function dataHoje() {
+  const d = new Date();
+  const dia = String(d.getDate()).padStart(2, '0');
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const ano = d.getFullYear();
+  return `${dia}/${mes}/${ano}`;
+  }
+
+  const [data, setData] = useState(dataHoje());
+
+  function dataParaISO(dataBR: string): string {
+  const partes = dataBR.split('/');
+  if (partes.length !== 3) return new Date().toISOString();
+  const [dia, mes, ano] = partes;
+  return new Date(`${ano}-${mes}-${dia}T12:00:00`).toISOString();
+  }
+
+  function aplicarMascara(valor: string) {
+  const numeros = valor.replace(/\D/g, '').slice(0, 8);
+  if (numeros.length <= 2) return numeros;
+  if (numeros.length <= 4) return `${numeros.slice(0, 2)}/${numeros.slice(2)}`;
+  return `${numeros.slice(0, 2)}/${numeros.slice(2, 4)}/${numeros.slice(4)}`;
+  }
+
+  
 
   useEffect(() => {
     async function carregar() {
@@ -61,7 +87,7 @@ export default function NovoLancamento() {
       quantidade: tipo === 'venda' ? Number(quantidade) : undefined,
       produtoId: tipo === 'venda' ? produtoId : undefined,
       categoria: tipo === 'despesa' ? categoria : undefined,
-      data: new Date(data).toISOString(),
+      data: dataParaISO(data),
       createdAt: new Date().toISOString(),
     };
 
@@ -102,8 +128,10 @@ export default function NovoLancamento() {
       <TextInput
         style={styles.input}
         value={data}
-        onChangeText={setData}
-        placeholder="AAAA-MM-DD"
+        onChangeText={(v) => setData(aplicarMascara(v))}
+        keyboardType="numeric"
+        placeholder="DD-MM-AAAA"
+        maxLength={10}
       />
 
       {/* Produto (só para venda) */}

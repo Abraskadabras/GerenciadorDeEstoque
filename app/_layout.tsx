@@ -1,5 +1,7 @@
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons as IoniconsType} from '@expo/vector-icons';
+
+const Ionicons = IoniconsType as any; // Solução temporária para erro de tipo
 
 export default function Layout() {
   return (

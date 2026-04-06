@@ -67,17 +67,17 @@ export default function Dashboard() {
       emoji: '🧪',
     },
     {
-      titulo: 'Uso interno',
+      titulo: 'Contábil',
       descricao: 'Produtos internos',
-      rota: '/materiais',
-      cor: '#BE185D',
-      emoji: '🛒',
+      rota: '/contabil',
+      cor: '#3da9d3',
+      emoji: '📊',
     },
   ];
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.titulo}>StockManager</Text>
+      <Text style={styles.titulo}>Operador de Estoque</Text>
       <Text style={styles.subtitulo}>Visão geral do negócio</Text>
 
       {/* Banner de alertas */}
