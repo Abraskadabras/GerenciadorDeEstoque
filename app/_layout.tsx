@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons/';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function Layout() {
   return (
@@ -17,13 +17,9 @@ export default function Layout() {
           fontSize: 11,
           fontWeight: '600',
         },
-        headerStyle: {
-          backgroundColor: '#fff',
-        },
+        headerStyle: { backgroundColor: '#fff' },
         headerTintColor: '#1a1a1a',
-        headerTitleStyle: {
-          fontWeight: '700',
-        },
+        headerTitleStyle: { fontWeight: '700' },
       }}
     >
       <Tabs.Screen
@@ -31,7 +27,7 @@ export default function Layout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+            <Ionicons name="home" size={size} color={color} />
           ),
         }}
       />
@@ -41,7 +37,6 @@ export default function Layout() {
           title: 'Estoque',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cube" size={size} color={color} />
-
           ),
         }}
       />
@@ -63,6 +58,15 @@ export default function Layout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="contabil/index"
+        options={{
+          title: 'Contábil',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="bar-chart" size={size} color={color} />
+          ),
+        }}
+      />
 
       {/* Rotas ocultas */}
       <Tabs.Screen name="estoque/novo" options={{ href: null }} />
@@ -71,7 +75,7 @@ export default function Layout() {
       <Tabs.Screen name="fornecedores/[id]" options={{ href: null }} />
       <Tabs.Screen name="materiais/novo" options={{ href: null }} />
       <Tabs.Screen name="materiais/[id]" options={{ href: null }} />
+      <Tabs.Screen name="contabil/novo" options={{ href: null }} />
     </Tabs>
   );
 }
-

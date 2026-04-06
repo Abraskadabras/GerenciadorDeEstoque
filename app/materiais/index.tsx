@@ -102,7 +102,12 @@ export default function Materiais() {
           </View>
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          // 👇 Card inteiro é clicável — leva para a tela de edição
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => router.push(`/materiais/${item.id}`)}
+            activeOpacity={0.75}
+          >
             <View style={[
               styles.badge,
               { backgroundColor: item.tipo === 'materia-prima' ? '#FEF3C7' : '#EDE9FE' }
@@ -127,13 +132,17 @@ export default function Materiais() {
                 </Text>
               )}
             </View>
+            {/* 👇 Botão ✕ com stopPropagation para não abrir edição ao remover */}
             <TouchableOpacity
-              onPress={() => confirmarRemocao(item.id, item.nome)}
+              onPress={(e) => {
+                e.stopPropagation();
+                confirmarRemocao(item.id, item.nome);
+              }}
               style={styles.btnRemover}
             >
               <Text style={styles.btnRemoverTexto}>✕</Text>
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         )}
       />
 

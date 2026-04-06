@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
-import { useFocusEffect } from 'expo-router';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { getEstoque, getFornecedores, getMateriais } from '../src/storage/database';
 
 export default function Dashboard() {
@@ -11,7 +10,9 @@ export default function Dashboard() {
     fornecedores: 0,
     materiais: 0,
     alertas: 0,
-    totalInvestido: 0,
+    totalInvestidoEstoque: 0,
+    totalLucroEstoque: 0,
+    totalMateriais: 0,
   });
 
   async function carregar() {
@@ -22,14 +23,18 @@ export default function Dashboard() {
     ]);
 
     const alertas = estoque.filter((i) => i.quantidade <= i.quantidadeMinima).length;
-    const totalInvestido = materiais.reduce((acc, m) => acc + (m.valor * m.quantidade), 0);
+    const totalInvestidoEstoque = estoque.reduce((acc, i) => acc + ((i.valorCompra ?? 0) * i.quantidade), 0);
+    const totalLucroEstoque = estoque.reduce((acc, i) => acc + (((i.valorVenda ?? 0) - (i.valorCompra ?? 0)) * i.quantidade), 0);
+    const totalMateriais = materiais.reduce((acc, m) => acc + ((m.valor ?? 0) * m.quantidade), 0);
 
     setTotais({
       estoque: estoque.length,
       fornecedores: fornecedores.length,
       materiais: materiais.length,
       alertas,
-      totalInvestido,
+      totalInvestidoEstoque,
+      totalLucroEstoque,
+      totalMateriais,
     });
   }
 
@@ -86,15 +91,46 @@ export default function Dashboard() {
             <Text style={styles.alertaTitulo}>
               {totais.alertas} {totais.alertas === 1 ? 'item' : 'itens'} com estoque baixo
             </Text>
-            <Text style={styles.alertaSub}>Toque para ver quais</Text>
+            <Text style={styles.alertaSub}>
+              Toque aqui, e veja qual.
+            </Text>
           </View>
         </TouchableOpacity>
       )}
-      {totais.totalInvestido > 0 && (
-        <View style={styles.investidoCard}>
-          <Text style={styles.investidoLabel}>Total investido em materiais</Text>
-          <Text style={styles.investidoValor}>
-            {totais.totalInvestido.toLocaleString('pt-BR', {
+
+      {/* Totais do estoque */}
+      {totais.totalInvestidoEstoque > 0 && (
+        <View style={styles.totaisContainer}>
+          <View style={[styles.totalCard, { borderLeftColor: '#4F46E5' }]}>
+            <Text style={styles.totalLabel}>Investido em estoque</Text>
+            <Text style={[styles.totalValor, { color: '#4F46E5' }]}>
+              {totais.totalInvestidoEstoque.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              })}
+            </Text>
+          </View>
+          <View style={[styles.totalCard, { borderLeftColor: '#059669' }]}>
+            <Text style={styles.totalLabel}>Lucro potencial</Text>
+            <Text style={[
+              styles.totalValor,
+              { color: totais.totalLucroEstoque >= 0 ? '#059669' : '#ef4444' }
+            ]}>
+              {totais.totalLucroEstoque.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              })}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Total em materiais */}
+      {totais.totalMateriais > 0 && (
+        <View style={styles.totalMateriaisCard}>
+          <Text style={styles.totalLabel}>Total investido em materiais</Text>
+          <Text style={[styles.totalValor, { color: '#BE185D' }]}>
+            {totais.totalMateriais.toLocaleString('pt-BR', {
               style: 'currency',
               currency: 'BRL',
             })}
@@ -134,14 +170,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 20,
+    marginBottom: 14,
     borderLeftWidth: 4,
     borderLeftColor: '#F59E0B',
   },
   alertaEmoji: { fontSize: 24 },
   alertaTitulo: { fontSize: 14, fontWeight: '700', color: '#92400E' },
   alertaSub: { fontSize: 12, color: '#B45309', marginTop: 2 },
-  grade: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
+  totaisContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 14,
+  },
+  totalCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderLeftWidth: 4,
+    elevation: 1,
+  },
+  totalMateriaisCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderLeftWidth: 4,
+    borderLeftColor: '#BE185D',
+    elevation: 1,
+    marginBottom: 14,
+  },
+  totalLabel: { fontSize: 11, color: '#888', marginBottom: 4 },
+  totalValor: { fontSize: 16, fontWeight: '700' },
+  grade: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: 6 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -156,15 +216,4 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 28, marginBottom: 10 },
   cardTitulo: { fontSize: 15, fontWeight: '600', marginBottom: 4 },
   cardDescricao: { fontSize: 12, color: '#888' },
-  investidoCard: {
-  backgroundColor: '#fff',
-  borderRadius: 12,
-  padding: 16,
-  marginBottom: 20,
-  borderLeftWidth: 4,
-  borderLeftColor: '#BE185D',
-  elevation: 1,
-},
-investidoLabel: { fontSize: 12, color: '#888', marginBottom: 4 },
-investidoValor: { fontSize: 22, fontWeight: '700', color: '#BE185D' },
 });
