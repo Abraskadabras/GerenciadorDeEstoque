@@ -4,7 +4,7 @@ import {
   StyleSheet, ScrollView, Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { adicionarLancamento, getEstoque } from '../../src/storage/database';
+import { adicionarLancamento, getEstoque, atualizarItemEstoque  } from '../../src/storage/database';
 import { Lancamento, TipoLancamento, ItemEstoque } from '../../src/types';
 
 const CATEGORIAS_DESPESA = [
@@ -92,6 +92,27 @@ export default function NovoLancamento() {
     };
 
     await adicionarLancamento(novo);
+
+    // Baixa automática no estoque
+    if (tipo === 'venda' && produtoId) {
+      const itens = await getEstoque();
+      const item = itens.find((i) => i.id === produtoId);
+      if (item) {
+        const novaQuantidade = Math.max(0, item.quantidade - (Number(quantidade) || 1));
+        await atualizarItemEstoque({ ...item, quantidade: novaQuantidade });
+
+        // Avisa se estoque ficou baixo após a venda
+        if (novaQuantidade <= item.quantidadeMinima) {
+          Alert.alert(
+            '⚠️ Estoque baixo',
+            `"${item.nome}" ficou com ${novaQuantidade} ${item.unidade} — abaixo do mínimo de ${item.quantidadeMinima}.`,
+            [{ text: 'OK', onPress: () => router.back() }]
+          );
+          return;
+        }
+      }
+    }
+
     router.back();
   }
 

@@ -4,8 +4,8 @@ import {
   StyleSheet, ScrollView, Alert, ActivityIndicator
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getEstoque, atualizarItemEstoque, removerItemEstoque, getFornecedores } from '../../src/storage/database';
-import { ItemEstoque, Fornecedor } from '../../src/types';
+import { getEstoque, atualizarItemEstoque, removerItemEstoque, getFornecedores, adicionarLancamento } from '../../src/storage/database';
+import { ItemEstoque, Fornecedor, Lancamento } from '../../src/types';
 
 export default function DetalheEstoque() {
   const router = useRouter();
@@ -50,22 +50,40 @@ export default function DetalheEstoque() {
   const margemPercent = compra > 0 ? ((lucroUnitario / compra) * 100) : 0;
   const lucroTotal = lucroUnitario * (Number(quantidade) || 0);
 
-  async function salvar() {
+    async function salvar() {
     if (!nome.trim() || !quantidade.trim()) {
       Alert.alert('Atenção', 'Preencha nome e quantidade.');
       return;
     }
 
+    const quantidadeAnterior = item!.quantidade;
+    const quantidadeNova = Number(quantidade);
+    const quantidadeAdicionada = quantidadeNova - quantidadeAnterior;
+
     await atualizarItemEstoque({
       ...item!,
       nome: nome.trim(),
-      quantidade: Number(quantidade),
+      quantidade: quantidadeNova,
       unidade,
       quantidadeMinima: Number(quantidadeMinima),
       valorCompra: compra,
       valorVenda: venda,
       fornecedorId,
     });
+
+    // Registra despesa só se acrescentou quantidade e tem valor de compra
+    if (quantidadeAdicionada > 0 && compra > 0) {
+      const despesa: Lancamento = {
+        id: Date.now().toString() + '_despesa',
+        tipo: 'despesa',
+        descricao: `Reposição: ${nome.trim()} (+${quantidadeAdicionada} ${unidade})`,
+        valor: compra * quantidadeAdicionada,
+        categoria: 'Estoque',
+        data: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+      await adicionarLancamento(despesa);
+    }
 
     Alert.alert('Sucesso', 'Item atualizado!', [
       { text: 'OK', onPress: () => router.back() }

@@ -68,7 +68,7 @@ export default function Dashboard() {
     },
     {
       titulo: 'Contábil',
-      descricao: 'Produtos internos',
+      descricao: 'Contabilidade e finanças',
       rota: '/contabil',
       cor: '#3da9d3',
       emoji: '📊',

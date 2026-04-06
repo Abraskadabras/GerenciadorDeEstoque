@@ -4,8 +4,9 @@ import {
   StyleSheet, ScrollView, Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { adicionarItemEstoque, getFornecedores } from '../../src/storage/database';
-import { ItemEstoque, Fornecedor } from '../../src/types';
+import { adicionarItemEstoque, getFornecedores, adicionarLancamento} from '../../src/storage/database';
+import { ItemEstoque, Fornecedor, Lancamento } from '../../src/types';
+
 
 export default function NovoEstoque() {
   const router = useRouter();
@@ -38,19 +39,32 @@ export default function NovoEstoque() {
       return;
     }
 
-    const novoItem: ItemEstoque = {
-      id: Date.now().toString(),
-      nome: nome.trim(),
-      quantidade: Number(quantidade),
-      unidade,
-      quantidadeMinima: Number(quantidadeMinima),
-      valorCompra: compra,
-      valorVenda: venda,
-      fornecedorId,
-      createdAt: new Date().toISOString(),
-    };
+      const novoItem: ItemEstoque = {
+        id: Date.now().toString(),
+        nome: nome.trim(),
+        quantidade: Number(quantidade),
+        unidade,
+        quantidadeMinima: Number(quantidadeMinima),
+        valorCompra: compra,
+        valorVenda: venda,
+        fornecedorId,
+        createdAt: new Date().toISOString(),
+      };
 
-    await adicionarItemEstoque(novoItem);
+      await adicionarItemEstoque(novoItem);
+      if (compra > 0) {
+      const despesa: Lancamento = {
+        id: Date.now().toString() + '_despesa',
+        tipo: 'despesa',
+        descricao: `Compra: ${novoItem.nome} (${Number(quantidade)} ${unidade})`,
+        valor: compra * Number(quantidade),
+        categoria: 'Estoque',
+        data: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+      await adicionarLancamento(despesa);
+    }
+
     router.back();
   }
 
